@@ -1,0 +1,182 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* ─── Custom Theme Variables ──────────────────────────────────── */
+:root {
+  --color-bg: #0a0a0f;
+  --color-bg-panel: rgba(20, 20, 30, 0.85);
+  --color-amber: #f59e0b;
+  --color-amber-glow: rgba(245, 158, 11, 0.3);
+  --color-warm: #ff9f43;
+  --font-outfit: 'Outfit', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+}
+
+/* ─── Base Styles ─────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+body {
+  font-family: var(--font-inter);
+  background: var(--color-bg);
+  color: #fff;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent pull-to-refresh on mobile */
+  overscroll-behavior: none;
+}
+
+/* ─── Font Utilities ──────────────────────────────────────────── */
+.font-outfit {
+  font-family: var(--font-outfit);
+}
+
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+/* ─── Animation Keyframes ─────────────────────────────────────── */
+@keyframes rainFall {
+  0% {
+    transform: translateY(-30px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+@keyframes steamRise {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(var(--steam-x, -5px), -30px) scale(1.5);
+    opacity: 0.15;
+  }
+  100% {
+    transform: translate(var(--steam-x2, 5px), -60px) scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 0.8; }
+  10% { opacity: 0.6; }
+  20% { opacity: 0.9; }
+  30% { opacity: 0.7; }
+  40% { opacity: 0.85; }
+  50% { opacity: 0.65; }
+  60% { opacity: 0.9; }
+  70% { opacity: 0.75; }
+  80% { opacity: 0.85; }
+  90% { opacity: 0.7; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 183, 77, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(255, 183, 77, 0.4);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* ─── Steam Particles ─────────────────────────────────────────── */
+.steam-particle:nth-child(1) { --steam-x: -8px; --steam-x2: 3px; }
+.steam-particle:nth-child(2) { --steam-x: 5px; --steam-x2: -7px; }
+.steam-particle:nth-child(3) { --steam-x: -3px; --steam-x2: 8px; }
+.steam-particle:nth-child(4) { --steam-x: 7px; --steam-x2: -4px; }
+.steam-particle:nth-child(5) { --steam-x: -6px; --steam-x2: 6px; }
+
+/* ─── Interactive Objects ─────────────────────────────────────── */
+.interactive-object {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.interactive-object button {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+.interactive-object button:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────────── */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Mobile Optimizations ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .interactive-object button {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+/* ─── Loading Screen ──────────────────────────────────────────── */
+@keyframes cafeLoad {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.cafe-enter {
+  animation: cafeLoad 1s ease-out forwards;
+}
+
+/* ─── Noise Texture Overlay (Subtle) ──────────────────────────── */
+.noise-overlay::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 100;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
