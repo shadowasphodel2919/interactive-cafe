@@ -39,7 +39,7 @@ export const SOUND_CONFIGS: SoundConfig[] = [
   { id: 'ceiling-fan', name: 'Ceiling Fan', icon: '🌀', category: 'center', description: 'Slow whooshing overhead', defaultVolume: 0.2, position: { x: 50, y: 15 } },
 
   // Right Area - Fireplace Lounge
-  { id: 'fireplace', name: 'Fireplace', icon: '🔥', category: 'right', description: 'Crackling warm fire', defaultVolume: 0.6, position: { x: 82, y: 55 } },
+  { id: 'fireplace', name: 'Fireplace', icon: '🔥', category: 'hidden', description: 'Crackling warm fire', defaultVolume: 0.6, position: { x: 82, y: 55 } },
   { id: 'vinyl', name: 'Vinyl Record', icon: '🎵', category: 'right', description: 'Warm vinyl crackle', defaultVolume: 0.3, position: { x: 90, y: 50 } },
   { id: 'jazz', name: 'Jazz Speaker', icon: '🎷', category: 'right', description: 'Soft jazz melodies', defaultVolume: 0.4, position: { x: 88, y: 42 } },
 
@@ -121,6 +121,8 @@ interface CafeStore {
   discoveredSounds: string[];
   isPanelOpen: boolean;
   customMixes: Record<string, Record<string, SoundState>>;
+  currentMode: 'city' | 'mountain' | 'train' | 'library' | 'cyberpunk' | 'desert';
+  isPlayMode: boolean;
 
   // Actions
   toggleSound: (id: string) => void;
@@ -135,6 +137,9 @@ interface CafeStore {
   saveCustomMix: (name: string) => void;
   loadCustomMix: (name: string) => void;
   deleteCustomMix: (name: string) => void;
+  setMode: (mode: 'city' | 'mountain' | 'train' | 'library' | 'cyberpunk' | 'desert') => void;
+  togglePlayMode: () => void;
+  resetPlayMode: () => void;
 }
 
 const initialSounds: Record<string, SoundState> = {};
@@ -156,6 +161,8 @@ export const useCafeStore = create<CafeStore>()(
       discoveredSounds: [],
       isPanelOpen: false,
       customMixes: {},
+      currentMode: 'city',
+      isPlayMode: false,
 
       toggleSound: (id: string) =>
         set((state) => ({
@@ -246,6 +253,18 @@ export const useCafeStore = create<CafeStore>()(
           return { customMixes: newMixes };
         });
       },
+      setMode: (mode: 'city' | 'mountain' | 'train' | 'library' | 'cyberpunk' | 'desert') =>
+        set({ currentMode: mode }),
+
+      togglePlayMode: () =>
+        set((state) => ({
+          isPlayMode: !state.isPlayMode,
+          // When entering play mode, clear all discovered hidden sounds to restart discovery
+          discoveredSounds: state.isPlayMode ? state.discoveredSounds : [],
+        })),
+
+      resetPlayMode: () =>
+        set({ discoveredSounds: [] }),
     }),
     {
       name: 'my-interactive-cafe',
@@ -255,6 +274,8 @@ export const useCafeStore = create<CafeStore>()(
         theme: state.theme,
         discoveredSounds: state.discoveredSounds,
         customMixes: state.customMixes,
+        currentMode: state.currentMode,
+        isPlayMode: state.isPlayMode,
       }),
     }
   )

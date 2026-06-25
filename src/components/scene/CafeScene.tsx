@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import InteractiveObject from './InteractiveObject';
-import { useCafeStore } from '@/store/cafe-store';
+import { useCafeStore, SOUND_CONFIGS } from '@/store/cafe-store';
 
 function seedRandom(seed: number): number {
   const x = Math.sin(seed) * 10000;
@@ -329,7 +329,14 @@ function AmbientLighting() {
 /* ─── Main Café Scene ─────────────────────────────────────────── */
 export default function CafeScene() {
   const sounds = useCafeStore((s) => s.sounds);
+  const isPlayMode = useCafeStore((s) => s.isPlayMode);
+  const togglePlayMode = useCafeStore((s) => s.togglePlayMode);
+  const discoveredSounds = useCafeStore((s) => s.discoveredSounds);
   const sceneRef = useRef<HTMLDivElement>(null);
+
+  const hiddenSounds = SOUND_CONFIGS.filter((s) => s.category === 'hidden');
+  const discoveredCount = discoveredSounds.length;
+  const totalHidden = hiddenSounds.length;
 
   return (
     <div
@@ -351,51 +358,56 @@ export default function CafeScene() {
       />
 
       {/* Atmospheric Overlays */}
-      <RainEffect />
-      <LightningEffect />
+      {/* <RainEffect /> */}
+      {/* <LightningEffect /> */}
       <CarLights />
       <AmbientLighting />
       <FireplaceGlow isActive={sounds.fireplace?.isActive} />
 
       {/* Animated elements */}
-      <VinylDisc isActive={sounds.vinyl?.isActive || sounds.jazz?.isActive} />
-      <CeilingFanAnim isActive={sounds['ceiling-fan']?.isActive} />
+      {/* <VinylDisc isActive={sounds.vinyl?.isActive || sounds.jazz?.isActive} />
+      <CeilingFanAnim isActive={sounds['ceiling-fan']?.isActive} /> */}
 
       {/* Steam from coffee cups */}
-      <SteamParticles x={15} y={45} />
+      {/* <SteamParticles x={15} y={45} />
       <SteamParticles x={45} y={55} />
-      <SteamParticles x={52} y={60} />
+      <SteamParticles x={52} y={60} /> */}
 
-      {/* ─── Interactive Sound Objects ─── */}
+      {/* ─── Interactive Sound Objects (desktop + play mode only) ─── */}
+      {isPlayMode && (
+        <div className="hidden md:contents">
 
-      {/* Left Area - Coffee Counter */}
-      <InteractiveObject soundId="espresso" size="md" />
-      <InteractiveObject soundId="grinder" size="md" />
-      <InteractiveObject soundId="barista" size="md" />
-      <InteractiveObject soundId="tea-kettle" size="sm" />
+          {/* Left Area - Coffee Counter */}
+          <InteractiveObject soundId="espresso" size="md" />
+          <InteractiveObject soundId="grinder" size="md" />
+          <InteractiveObject soundId="barista" size="md" />
+          <InteractiveObject soundId="tea-kettle" size="sm" />
 
-      {/* Center Area - Seating */}
-      <InteractiveObject soundId="keyboard" size="sm" />
-      <InteractiveObject soundId="conversations" size="md" />
-      <InteractiveObject soundId="page-turning" size="sm" />
-      <InteractiveObject soundId="ceiling-fan" size="sm" />
+          {/* Center Area - Seating */}
+          <InteractiveObject soundId="keyboard" size="sm" />
+          <InteractiveObject soundId="conversations" size="md" />
+          <InteractiveObject soundId="page-turning" size="sm" />
+          <InteractiveObject soundId="ceiling-fan" size="sm" />
 
-      {/* Right Area - Fireplace Lounge */}
-      <InteractiveObject soundId="fireplace" size="lg" />
-      <InteractiveObject soundId="vinyl" size="md" />
-      <InteractiveObject soundId="jazz" size="md" />
+          {/* Right Area - Fireplace Lounge */}
+          <InteractiveObject soundId="fireplace" size="lg" />
+          <InteractiveObject soundId="vinyl" size="md" />
+          <InteractiveObject soundId="jazz" size="md" />
 
-      {/* Background */}
-      <InteractiveObject soundId="rain" size="lg" />
-      <InteractiveObject soundId="traffic" size="md" />
-      <InteractiveObject soundId="wind-chimes" size="sm" />
+          {/* Background */}
+          <InteractiveObject soundId="rain" size="lg" />
+          <InteractiveObject soundId="traffic" size="md" />
+          <InteractiveObject soundId="wind-chimes" size="sm" />
 
-      {/* Hidden / Discovery Mode */}
-      <InteractiveObject soundId="clock" size="sm" />
-      <InteractiveObject soundId="cat-purring" size="sm" />
-      <InteractiveObject soundId="neon-buzz" size="sm" />
-      <InteractiveObject soundId="ice-cubes" size="sm" />
-      <InteractiveObject soundId="train-horn" size="sm" />
+          {/* Hidden / Discovery Mode */}
+          <InteractiveObject soundId="clock" size="sm" />
+          <InteractiveObject soundId="cat-purring" size="sm" />
+          <InteractiveObject soundId="neon-buzz" size="sm" />
+          <InteractiveObject soundId="ice-cubes" size="sm" />
+          <InteractiveObject soundId="train-horn" size="sm" />
+
+        </div>
+      )}
 
       {/* Bottom gradient for panel area */}
       <div
@@ -417,9 +429,91 @@ export default function CafeScene() {
         >
           My Interactive Café
         </h1>
-        <p className="text-xs md:text-sm text-white/40 mt-1 font-inter tracking-wide">
-          Click the sounds around the café to create your ambience
-        </p>
+        <div className="hidden md:block">
+          <AnimatePresence mode="wait">
+            {isPlayMode ? (
+              <motion.p
+                key="play"
+                className="text-xs md:text-sm text-purple-300/70 mt-1 font-inter tracking-wide"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                🎮 Explore the café — find {totalHidden} hidden sounds
+              </motion.p>
+            ) : (
+              <motion.p
+                key="normal"
+                className="text-xs md:text-sm text-white/40 mt-1 font-inter tracking-wide"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                Click the sounds around the café to create your ambience
+              </motion.p>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* Play Mode Toggle — desktop only, sits below the ModeSelector */}
+      <motion.div
+        className="absolute top-[72px] left-6 z-[20] hidden md:flex items-center gap-2"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2 }}
+      >
+        <button
+          onClick={togglePlayMode}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium
+            backdrop-blur-md border transition-all duration-300
+            ${
+              isPlayMode
+                ? 'bg-purple-500/30 border-purple-400/60 text-purple-200 shadow-lg shadow-purple-500/20'
+                : 'bg-black/50 border-white/20 text-white/70 hover:text-white hover:border-white/40 hover:bg-black/60'
+            }`}
+          title={isPlayMode ? 'Exit Play Mode' : 'Enter Play Mode — find hidden sounds'}
+        >
+          <span>{isPlayMode ? '🎮' : '🔍'}</span>
+          <span>{isPlayMode ? 'Exit Play Mode' : 'Play Mode'}</span>
+        </button>
+
+        {/* Discovery counter — only in play mode */}
+        <AnimatePresence>
+          {isPlayMode && (
+            <motion.div
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              className="flex items-center gap-1.5"
+            >
+              {hiddenSounds.map((s) => (
+                <motion.div
+                  key={s.id}
+                  title={discoveredSounds.includes(s.id) ? s.name : '???'}
+                  className={`w-2 h-2 rounded-full transition-all duration-500 ${
+                    discoveredSounds.includes(s.id)
+                      ? 'bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.7)]'
+                      : 'bg-white/15'
+                  }`}
+                  animate={{
+                    scale: discoveredSounds.includes(s.id) ? [1, 1.4, 1] : 1,
+                  }}
+                  transition={{ duration: 0.4 }}
+                />
+              ))}
+              {discoveredCount === totalHidden && totalHidden > 0 && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-[10px] text-yellow-300/80 ml-1"
+                >
+                  🎉 All found!
+                </motion.span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Active sounds count */}

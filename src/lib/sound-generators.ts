@@ -1406,6 +1406,1093 @@ export function barista(ctx: AudioContext): SoundGeneratorResult {
 }
 
 // ---------------------------------------------------------------------------
+// 20. Distant Train — low rumble with doppler-like sweeps
+// ---------------------------------------------------------------------------
+export function distantTrain(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.5;
+  d.addNode(out);
+
+  // Continuous low rumble — brown noise → lowpass
+  const rumble = d.addSource(createNoiseSource(ctx, "brown"));
+  const lp = ctx.createBiquadFilter();
+  lp.type = "lowpass";
+  lp.frequency.value = 180;
+  d.addNode(lp);
+  const rumbleGain = ctx.createGain();
+  rumbleGain.gain.value = 0.35;
+  d.addNode(rumbleGain);
+
+  // Slow sway for the rumble — like the train gently rocking
+  const swayLfo = ctx.createOscillator();
+  swayLfo.type = "sine";
+  swayLfo.frequency.value = 0.12;
+  swayLfo.start();
+  d.addOsc(swayLfo);
+  const swayDepth = ctx.createGain();
+  swayDepth.gain.value = 0.1;
+  d.addNode(swayDepth);
+  swayLfo.connect(swayDepth);
+  swayDepth.connect(rumbleGain.gain);
+
+  rumble.connect(lp);
+  lp.connect(rumbleGain);
+  rumbleGain.connect(out);
+
+  // Rhythmic clickety-clack: gentle timed impulses
+  function clack() {
+    if (d.isAborted) return;
+
+    const durationS = 0.012;
+    const samples = Math.floor(ctx.sampleRate * durationS);
+    const buf = ctx.createBuffer(1, samples, ctx.sampleRate);
+    const ch = buf.getChannelData(0);
+    for (let i = 0; i < samples; i++) {
+      ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / samples, 6);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    d.addSource(src);
+
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = randRange(600, 1200);
+    bp.Q.value = 3;
+    d.addNode(bp);
+
+    const clackGain = ctx.createGain();
+    clackGain.gain.value = randRange(0.08, 0.18);
+    d.addNode(clackGain);
+
+    // Muffle to sound distant
+    const distLp = ctx.createBiquadFilter();
+    distLp.type = "lowpass";
+    distLp.frequency.value = 800;
+    d.addNode(distLp);
+
+    src.connect(bp);
+    bp.connect(clackGain);
+    clackGain.connect(distLp);
+    distLp.connect(out);
+    src.start();
+
+    // Two clicks close together (clickety-clack pattern)
+    const gap = randRange(120, 180);
+    d.addTimer(setTimeout(clack, gap));
+  }
+
+  // Periodic doppler-like pass: sweep the rumble filter
+  function dopplerPass() {
+    if (d.isAborted) return;
+
+    const now = ctx.currentTime;
+    const sweepDuration = randRange(6, 12);
+    // Sweep filter up then back down
+    lp.frequency.setValueAtTime(180, now);
+    lp.frequency.linearRampToValueAtTime(350, now + sweepDuration * 0.4);
+    lp.frequency.linearRampToValueAtTime(180, now + sweepDuration);
+
+    // Volume swell
+    rumbleGain.gain.setValueAtTime(0.35, now);
+    rumbleGain.gain.linearRampToValueAtTime(0.55, now + sweepDuration * 0.4);
+    rumbleGain.gain.linearRampToValueAtTime(0.35, now + sweepDuration);
+
+    d.addTimer(setTimeout(dopplerPass, randRange(20000, 45000)));
+  }
+
+  d.addTimer(setTimeout(clack, 500));
+  d.addTimer(setTimeout(dopplerPass, randRange(8000, 15000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 21. Birdsong — gentle pentatonic chirps with trills
+// ---------------------------------------------------------------------------
+export function birdsong(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.5;
+  d.addNode(out);
+
+  // Bird-like frequencies (high pentatonic, sparrow-like)
+  const birdFreqs = [2200, 2640, 2970, 3520, 3960, 4400, 4950];
+
+  function chirp() {
+    if (d.isAborted) return;
+
+    const baseFreq = birdFreqs[Math.floor(Math.random() * birdFreqs.length)];
+    const noteCount = Math.floor(randRange(2, 5));
+    const now = ctx.currentTime;
+
+    for (let i = 0; i < noteCount; i++) {
+      const noteStart = now + i * randRange(0.06, 0.12);
+      const noteDuration = randRange(0.04, 0.1);
+      const freq = baseFreq * (1 + (Math.random() - 0.5) * 0.15);
+
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, noteStart);
+      // Slight upward or downward slide for natural sound
+      osc.frequency.linearRampToValueAtTime(
+        freq * (1 + (Math.random() - 0.5) * 0.1),
+        noteStart + noteDuration
+      );
+      d.addOsc(osc);
+
+      const env = ctx.createGain();
+      env.gain.value = 0;
+      d.addNode(env);
+
+      const amp = randRange(0.06, 0.15);
+      env.gain.setValueAtTime(0, noteStart);
+      env.gain.linearRampToValueAtTime(amp, noteStart + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.001, noteStart + noteDuration);
+
+      osc.connect(env);
+      env.connect(out);
+      osc.start(noteStart);
+      osc.stop(noteStart + noteDuration + 0.05);
+    }
+
+    // Next chirp after a pause
+    d.addTimer(setTimeout(chirp, randRange(1500, 5000)));
+  }
+
+  // Occasional trill — rapid repeating note
+  function trill() {
+    if (d.isAborted) return;
+
+    const baseFreq = birdFreqs[Math.floor(Math.random() * birdFreqs.length)];
+    const now = ctx.currentTime;
+    const trillNotes = Math.floor(randRange(6, 12));
+
+    for (let i = 0; i < trillNotes; i++) {
+      const t = now + i * 0.04;
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = baseFreq + (i % 2 === 0 ? 0 : randRange(100, 300));
+      d.addOsc(osc);
+
+      const env = ctx.createGain();
+      env.gain.value = 0;
+      d.addNode(env);
+
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(0.08, t + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.001, t + 0.035);
+
+      osc.connect(env);
+      env.connect(out);
+      osc.start(t);
+      osc.stop(t + 0.05);
+    }
+
+    d.addTimer(setTimeout(trill, randRange(6000, 15000)));
+  }
+
+  d.addTimer(setTimeout(chirp, randRange(500, 2000)));
+  d.addTimer(setTimeout(chirp, randRange(2000, 4000)));
+  d.addTimer(setTimeout(trill, randRange(4000, 8000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 22. Crickets — high-frequency rhythmic chirping
+// ---------------------------------------------------------------------------
+export function crickets(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.45;
+  d.addNode(out);
+
+  // Multiple cricket "voices" at slightly different rates and frequencies
+  for (let v = 0; v < 3; v++) {
+    const freq = randRange(3800, 4600);
+    const chirpRate = randRange(6, 10); // chirps per second
+    const chirpDuration = randRange(0.015, 0.03);
+
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.start();
+    d.addOsc(osc);
+
+    // AM modulation at chirp rate to create rhythmic pulsing
+    const amOsc = ctx.createOscillator();
+    amOsc.type = "square";
+    amOsc.frequency.value = chirpRate;
+    amOsc.start();
+    d.addOsc(amOsc);
+
+    // Convert square wave (-1 to 1) into (0 to 1) range for AM
+    const amGain = ctx.createGain();
+    amGain.gain.value = 0.5;
+    d.addNode(amGain);
+
+    const amOffset = ctx.createGain();
+    amOffset.gain.value = 0;
+    d.addNode(amOffset);
+
+    amOsc.connect(amGain);
+    amGain.connect(amOffset.gain);
+
+    // Overall voice volume
+    const voiceGain = ctx.createGain();
+    voiceGain.gain.value = randRange(0.04, 0.08);
+    d.addNode(voiceGain);
+
+    // Gentle bandpass to shape the tone
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.value = freq;
+    bp.Q.value = 15;
+    d.addNode(bp);
+
+    osc.connect(bp);
+    bp.connect(amOffset);
+    amOffset.connect(voiceGain);
+    voiceGain.connect(out);
+
+    // Slow volume variation — some crickets get louder/quieter
+    const breathLfo = ctx.createOscillator();
+    breathLfo.type = "sine";
+    breathLfo.frequency.value = randRange(0.05, 0.15);
+    breathLfo.start();
+    d.addOsc(breathLfo);
+    const breathDepth = ctx.createGain();
+    breathDepth.gain.value = 0.02;
+    d.addNode(breathDepth);
+    breathLfo.connect(breathDepth);
+    breathDepth.connect(voiceGain.gain);
+  }
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 23. Glitch SFX — random digital distortion bursts
+// ---------------------------------------------------------------------------
+export function glitchSfx(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.35;
+  d.addNode(out);
+
+  // Constant low digital hum
+  const hum = ctx.createOscillator();
+  hum.type = "sawtooth";
+  hum.frequency.value = 120;
+  hum.start();
+  d.addOsc(hum);
+  const humGain = ctx.createGain();
+  humGain.gain.value = 0.02;
+  d.addNode(humGain);
+  const humLp = ctx.createBiquadFilter();
+  humLp.type = "lowpass";
+  humLp.frequency.value = 400;
+  d.addNode(humLp);
+  hum.connect(humLp);
+  humLp.connect(humGain);
+  humGain.connect(out);
+
+  function glitch() {
+    if (d.isAborted) return;
+
+    const burstCount = Math.floor(randRange(1, 4));
+    for (let i = 0; i < burstCount; i++) {
+      const delay = i * randRange(30, 100);
+      const timer = setTimeout(() => {
+        if (d.isAborted) return;
+
+        const durationS = randRange(0.01, 0.06);
+        const samples = Math.floor(ctx.sampleRate * durationS);
+        const buf = ctx.createBuffer(1, samples, ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+
+        // Bitcrushed-style noise
+        let val = 0;
+        const stepSize = Math.floor(randRange(4, 32));
+        for (let j = 0; j < samples; j++) {
+          if (j % stepSize === 0) {
+            val = (Math.random() * 2 - 1);
+          }
+          ch[j] = val * Math.pow(1 - j / samples, 2);
+        }
+
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        d.addSource(src);
+
+        const glitchGain = ctx.createGain();
+        glitchGain.gain.value = randRange(0.1, 0.3);
+        d.addNode(glitchGain);
+
+        const bp = ctx.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.value = randRange(800, 6000);
+        bp.Q.value = randRange(1, 5);
+        d.addNode(bp);
+
+        src.connect(bp);
+        bp.connect(glitchGain);
+        glitchGain.connect(out);
+        src.start();
+      }, delay);
+      d.addTimer(timer);
+    }
+
+    d.addTimer(setTimeout(glitch, randRange(3000, 8000)));
+  }
+
+  d.addTimer(setTimeout(glitch, randRange(1000, 3000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 24. Drone Hum — low continuous quadcopter-like hum
+// ---------------------------------------------------------------------------
+export function droneHum(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.4;
+  d.addNode(out);
+
+  // Multiple motor oscillators slightly detuned
+  const motorFreqs = [85, 170, 255];
+  for (const freq of motorFreqs) {
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.value = freq;
+    osc.start();
+    d.addOsc(osc);
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.value = freq === 85 ? 0.06 : freq === 170 ? 0.04 : 0.02;
+    d.addNode(oscGain);
+
+    // Slight pitch wobble for each motor
+    const wobble = ctx.createOscillator();
+    wobble.type = "sine";
+    wobble.frequency.value = randRange(0.3, 0.8);
+    wobble.start();
+    d.addOsc(wobble);
+    const wobbleDepth = ctx.createGain();
+    wobbleDepth.gain.value = freq * 0.008;
+    d.addNode(wobbleDepth);
+    wobble.connect(wobbleDepth);
+    wobbleDepth.connect(osc.frequency);
+
+    osc.connect(oscGain);
+    oscGain.connect(out);
+  }
+
+  // Broad noise layer for propeller wash
+  const wash = d.addSource(createNoiseSource(ctx, "pink"));
+  const washBp = ctx.createBiquadFilter();
+  washBp.type = "bandpass";
+  washBp.frequency.value = 300;
+  washBp.Q.value = 0.5;
+  d.addNode(washBp);
+  const washGain = ctx.createGain();
+  washGain.gain.value = 0.04;
+  d.addNode(washGain);
+
+  wash.connect(washBp);
+  washBp.connect(washGain);
+  washGain.connect(out);
+
+  // Distance modulation — drone slowly gets closer/farther
+  const distLfo = ctx.createOscillator();
+  distLfo.type = "sine";
+  distLfo.frequency.value = 0.03;
+  distLfo.start();
+  d.addOsc(distLfo);
+  const distDepth = ctx.createGain();
+  distDepth.gain.value = 0.15;
+  d.addNode(distDepth);
+  distLfo.connect(distDepth);
+  distDepth.connect(out.gain);
+
+  // Lowpass to keep it distant and soothing
+  const masterLp = ctx.createBiquadFilter();
+  masterLp.type = "lowpass";
+  masterLp.frequency.value = 600;
+  d.addNode(masterLp);
+
+  const realOut = ctx.createGain();
+  realOut.gain.value = 1;
+  d.addNode(realOut);
+
+  out.connect(masterLp);
+  masterLp.connect(realOut);
+
+  return { node: realOut, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 25. Lo-Fi Radio — warm muffled beats with vinyl crackle
+// ---------------------------------------------------------------------------
+export function lofiRadio(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.45;
+  d.addNode(out);
+
+  // Warm chord pad: stacked sine tones (Am7 voicing)
+  // A3≈220, C4≈261.63, E4≈329.63, G4≈392
+  const chordFreqs = [220, 261.63, 329.63, 392];
+  for (const freq of chordFreqs) {
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.start();
+    d.addOsc(osc);
+
+    const oscGain = ctx.createGain();
+    oscGain.gain.value = 0.025;
+    d.addNode(oscGain);
+
+    // Gentle vibrato
+    const vib = ctx.createOscillator();
+    vib.type = "sine";
+    vib.frequency.value = randRange(3, 5);
+    vib.start();
+    d.addOsc(vib);
+    const vibDepth = ctx.createGain();
+    vibDepth.gain.value = 0.004;
+    d.addNode(vibDepth);
+    vib.connect(vibDepth);
+    vibDepth.connect(oscGain.gain);
+
+    osc.connect(oscGain);
+    oscGain.connect(out);
+  }
+
+  // Slow "beat" — kick-like pulse
+  const kickOsc = ctx.createOscillator();
+  kickOsc.type = "sine";
+  kickOsc.frequency.value = 60;
+  kickOsc.start();
+  d.addOsc(kickOsc);
+
+  // AM at ~1.5 Hz (~90 BPM feel)
+  const beatLfo = ctx.createOscillator();
+  beatLfo.type = "sine";
+  beatLfo.frequency.value = 1.5;
+  beatLfo.start();
+  d.addOsc(beatLfo);
+  const beatDepth = ctx.createGain();
+  beatDepth.gain.value = 0.015;
+  d.addNode(beatDepth);
+  const kickGain = ctx.createGain();
+  kickGain.gain.value = 0;
+  d.addNode(kickGain);
+  beatLfo.connect(beatDepth);
+  beatDepth.connect(kickGain.gain);
+  kickOsc.connect(kickGain);
+  kickGain.connect(out);
+
+  // Vinyl surface noise
+  const hiss = d.addSource(createNoiseSource(ctx, "white"));
+  const hissLp = ctx.createBiquadFilter();
+  hissLp.type = "lowpass";
+  hissLp.frequency.value = 800;
+  d.addNode(hissLp);
+  const hissGain = ctx.createGain();
+  hissGain.gain.value = 0.03;
+  d.addNode(hissGain);
+  hiss.connect(hissLp);
+  hissLp.connect(hissGain);
+  hissGain.connect(out);
+
+  // Overall heavy lowpass — sounds like it's coming through a small speaker
+  const muffle = ctx.createBiquadFilter();
+  muffle.type = "lowpass";
+  muffle.frequency.value = 900;
+  d.addNode(muffle);
+
+  const realOut = ctx.createGain();
+  realOut.gain.value = 1;
+  d.addNode(realOut);
+
+  out.connect(muffle);
+  muffle.connect(realOut);
+
+  return { node: realOut, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 26. Cat Meow — periodic soothing meow sounds
+// ---------------------------------------------------------------------------
+export function catMeow(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.4;
+  d.addNode(out);
+
+  function meow() {
+    if (d.isAborted) return;
+
+    const now = ctx.currentTime;
+    const duration = randRange(0.4, 0.8);
+
+    // Main vocal formant — sine sweep
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    const startFreq = randRange(400, 500);
+    osc.frequency.setValueAtTime(startFreq, now);
+    osc.frequency.linearRampToValueAtTime(startFreq * 1.8, now + duration * 0.3);
+    osc.frequency.linearRampToValueAtTime(startFreq * 1.2, now + duration * 0.7);
+    osc.frequency.linearRampToValueAtTime(startFreq * 0.8, now + duration);
+    d.addOsc(osc);
+
+    // Second formant (nasal quality)
+    const osc2 = ctx.createOscillator();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(startFreq * 2.5, now);
+    osc2.frequency.linearRampToValueAtTime(startFreq * 3.5, now + duration * 0.3);
+    osc2.frequency.linearRampToValueAtTime(startFreq * 2.8, now + duration);
+    d.addOsc(osc2);
+
+    const env = ctx.createGain();
+    env.gain.value = 0;
+    d.addNode(env);
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(0.15, now + duration * 0.15);
+    env.gain.setValueAtTime(0.15, now + duration * 0.6);
+    env.gain.linearRampToValueAtTime(0, now + duration);
+
+    const env2 = ctx.createGain();
+    env2.gain.value = 0;
+    d.addNode(env2);
+    env2.gain.setValueAtTime(0, now);
+    env2.gain.linearRampToValueAtTime(0.04, now + duration * 0.2);
+    env2.gain.linearRampToValueAtTime(0, now + duration);
+
+    // Breathy noise component
+    const noise = d.addSource(createNoiseSource(ctx, "pink"));
+    const noiseBp = ctx.createBiquadFilter();
+    noiseBp.type = "bandpass";
+    noiseBp.frequency.value = 1200;
+    noiseBp.Q.value = 2;
+    d.addNode(noiseBp);
+    const noiseEnv = ctx.createGain();
+    noiseEnv.gain.value = 0;
+    d.addNode(noiseEnv);
+    noiseEnv.gain.setValueAtTime(0, now);
+    noiseEnv.gain.linearRampToValueAtTime(0.06, now + duration * 0.1);
+    noiseEnv.gain.linearRampToValueAtTime(0, now + duration);
+
+    // Muffle slightly for distance
+    const mewLp = ctx.createBiquadFilter();
+    mewLp.type = "lowpass";
+    mewLp.frequency.value = 1800;
+    d.addNode(mewLp);
+
+    osc.connect(env);
+    osc2.connect(env2);
+    noise.connect(noiseBp);
+    noiseBp.connect(noiseEnv);
+    env.connect(mewLp);
+    env2.connect(mewLp);
+    noiseEnv.connect(mewLp);
+    mewLp.connect(out);
+
+    osc.start(now);
+    osc.stop(now + duration + 0.1);
+    osc2.start(now);
+    osc2.stop(now + duration + 0.1);
+
+    const stopTimer = setTimeout(() => {
+      try { noise.stop(); } catch { /* ok */ }
+      try { noise.disconnect(); } catch { /* ok */ }
+    }, (duration + 0.2) * 1000);
+    d.addTimer(stopTimer);
+
+    // Next meow after a long pause — cats are lazy
+    d.addTimer(setTimeout(meow, randRange(12000, 30000)));
+  }
+
+  d.addTimer(setTimeout(meow, randRange(3000, 8000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 27. Muffled Bass — sub-bass pulses heard through a wall
+// ---------------------------------------------------------------------------
+export function muffledBass(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.45;
+  d.addNode(out);
+
+  // Sub-bass oscillator
+  const bass = ctx.createOscillator();
+  bass.type = "sine";
+  bass.frequency.value = 45;
+  bass.start();
+  d.addOsc(bass);
+
+  const bassGain = ctx.createGain();
+  bassGain.gain.value = 0.2;
+  d.addNode(bassGain);
+
+  // Beat pattern AM at ~2.2 Hz (~130 BPM, club-like)
+  const beatLfo = ctx.createOscillator();
+  beatLfo.type = "sine";
+  beatLfo.frequency.value = 2.2;
+  beatLfo.start();
+  d.addOsc(beatLfo);
+  const beatDepth = ctx.createGain();
+  beatDepth.gain.value = 0.12;
+  d.addNode(beatDepth);
+  beatLfo.connect(beatDepth);
+  beatDepth.connect(bassGain.gain);
+
+  bass.connect(bassGain);
+  bassGain.connect(out);
+
+  // Mid-frequency body noise (muffled synth/crowd)
+  const bodyNoise = d.addSource(createNoiseSource(ctx, "pink"));
+  const bodyBp = ctx.createBiquadFilter();
+  bodyBp.type = "bandpass";
+  bodyBp.frequency.value = 300;
+  bodyBp.Q.value = 1.5;
+  d.addNode(bodyBp);
+  const bodyGain = ctx.createGain();
+  bodyGain.gain.value = 0.04;
+  d.addNode(bodyGain);
+
+  // Beat modulation on body too
+  const bodyBeatDepth = ctx.createGain();
+  bodyBeatDepth.gain.value = 0.02;
+  d.addNode(bodyBeatDepth);
+  beatLfo.connect(bodyBeatDepth);
+  bodyBeatDepth.connect(bodyGain.gain);
+
+  bodyNoise.connect(bodyBp);
+  bodyBp.connect(bodyGain);
+  bodyGain.connect(out);
+
+  // Heavy lowpass — simulates walls absorbing highs
+  const wallLp = ctx.createBiquadFilter();
+  wallLp.type = "lowpass";
+  wallLp.frequency.value = 200;
+  d.addNode(wallLp);
+
+  const realOut = ctx.createGain();
+  realOut.gain.value = 1;
+  d.addNode(realOut);
+
+  out.connect(wallLp);
+  wallLp.connect(realOut);
+
+  return { node: realOut, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 28. Radio Static — white noise with intermittent crackle
+// ---------------------------------------------------------------------------
+export function radioStatic(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.35;
+  d.addNode(out);
+
+  // Base static: filtered white noise
+  const noise = d.addSource(createNoiseSource(ctx, "white"));
+  const bp = ctx.createBiquadFilter();
+  bp.type = "bandpass";
+  bp.frequency.value = 3000;
+  bp.Q.value = 0.3;
+  d.addNode(bp);
+  const staticGain = ctx.createGain();
+  staticGain.gain.value = 0.06;
+  d.addNode(staticGain);
+
+  noise.connect(bp);
+  bp.connect(staticGain);
+  staticGain.connect(out);
+
+  // Occasional "tuning" sweep
+  function sweep() {
+    if (d.isAborted) return;
+    const now = ctx.currentTime;
+    const dur = randRange(0.5, 2.0);
+    bp.frequency.setValueAtTime(3000, now);
+    bp.frequency.linearRampToValueAtTime(randRange(1000, 6000), now + dur * 0.5);
+    bp.frequency.linearRampToValueAtTime(3000, now + dur);
+
+    d.addTimer(setTimeout(sweep, randRange(8000, 20000)));
+  }
+
+  // Intermittent crackle bursts
+  function burst() {
+    if (d.isAborted) return;
+
+    const count = Math.floor(randRange(2, 6));
+    for (let i = 0; i < count; i++) {
+      const delay = i * randRange(10, 50);
+      const timer = setTimeout(() => {
+        if (d.isAborted) return;
+        const samples = Math.floor(ctx.sampleRate * randRange(0.002, 0.008));
+        const buf = ctx.createBuffer(1, samples, ctx.sampleRate);
+        const ch = buf.getChannelData(0);
+        for (let j = 0; j < samples; j++) {
+          ch[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / samples, 3);
+        }
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        d.addSource(src);
+        const crackGain = ctx.createGain();
+        crackGain.gain.value = randRange(0.1, 0.3);
+        d.addNode(crackGain);
+        src.connect(crackGain);
+        crackGain.connect(out);
+        src.start();
+      }, delay);
+      d.addTimer(timer);
+    }
+
+    d.addTimer(setTimeout(burst, randRange(2000, 6000)));
+  }
+
+  d.addTimer(setTimeout(sweep, randRange(5000, 10000)));
+  d.addTimer(setTimeout(burst, randRange(1000, 3000)));
+
+  // Slow overall volume breathing
+  const breathLfo = ctx.createOscillator();
+  breathLfo.type = "sine";
+  breathLfo.frequency.value = 0.08;
+  breathLfo.start();
+  d.addOsc(breathLfo);
+  const breathDepth = ctx.createGain();
+  breathDepth.gain.value = 0.02;
+  d.addNode(breathDepth);
+  breathLfo.connect(breathDepth);
+  breathDepth.connect(out.gain);
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 29. Acoustic Guitar — gentle arpeggiated string tones
+// ---------------------------------------------------------------------------
+export function acousticGuitar(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.5;
+  d.addNode(out);
+
+  // Chord progressions: Am → C → G → Em (soothing campfire feel)
+  const chords = [
+    [220.0, 261.63, 329.63],  // Am: A3, C4, E4
+    [261.63, 329.63, 392.0],  // C: C4, E4, G4
+    [196.0, 246.94, 293.66],  // G: G3, B3, D4
+    [164.81, 196.0, 246.94],  // Em: E3, G3, B3
+  ];
+  let chordIdx = 0;
+
+  function strum() {
+    if (d.isAborted) return;
+
+    const chord = chords[chordIdx % chords.length];
+    chordIdx++;
+
+    const now = ctx.currentTime;
+
+    chord.forEach((freq, i) => {
+      const noteStart = now + i * randRange(0.08, 0.15);
+      const noteDuration = randRange(1.5, 2.5);
+
+      // Karplus-Strong-like: use a shaped noise burst + sine for string quality
+      const osc = ctx.createOscillator();
+      osc.type = "triangle"; // warmer than sine, softer than square
+      osc.frequency.value = freq;
+      d.addOsc(osc);
+
+      const env = ctx.createGain();
+      env.gain.value = 0;
+      d.addNode(env);
+
+      const amplitude = randRange(0.06, 0.12);
+      env.gain.setValueAtTime(0, noteStart);
+      env.gain.linearRampToValueAtTime(amplitude, noteStart + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.001, noteStart + noteDuration);
+
+      // Body resonance filter
+      const bodyBp = ctx.createBiquadFilter();
+      bodyBp.type = "bandpass";
+      bodyBp.frequency.value = 400;
+      bodyBp.Q.value = 0.5;
+      d.addNode(bodyBp);
+
+      osc.connect(env);
+      env.connect(bodyBp);
+      bodyBp.connect(out);
+      osc.start(noteStart);
+      osc.stop(noteStart + noteDuration + 0.1);
+    });
+
+    // Next strum after 3-6 seconds
+    d.addTimer(setTimeout(strum, randRange(3000, 6000)));
+  }
+
+  d.addTimer(setTimeout(strum, randRange(500, 2000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 30. Coyote Howl — distant gliding pitched tones
+// ---------------------------------------------------------------------------
+export function coyoteHowl(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.35;
+  d.addNode(out);
+
+  function howl() {
+    if (d.isAborted) return;
+
+    const now = ctx.currentTime;
+    const duration = randRange(2.5, 4.5);
+    const baseFreq = randRange(280, 380);
+
+    // Main vocal tone
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    // Characteristic howl shape: rise → sustain high → fall
+    osc.frequency.setValueAtTime(baseFreq * 0.6, now);
+    osc.frequency.linearRampToValueAtTime(baseFreq, now + duration * 0.2);
+    osc.frequency.setValueAtTime(baseFreq, now + duration * 0.5);
+    osc.frequency.linearRampToValueAtTime(baseFreq * 1.1, now + duration * 0.65);
+    osc.frequency.linearRampToValueAtTime(baseFreq * 0.5, now + duration);
+    d.addOsc(osc);
+
+    // Slight vibrato
+    const vib = ctx.createOscillator();
+    vib.type = "sine";
+    vib.frequency.value = 5;
+    vib.start();
+    d.addOsc(vib);
+    const vibDepth = ctx.createGain();
+    vibDepth.gain.value = 8;
+    d.addNode(vibDepth);
+    vib.connect(vibDepth);
+    vibDepth.connect(osc.frequency);
+
+    // Envelope
+    const env = ctx.createGain();
+    env.gain.value = 0;
+    d.addNode(env);
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(0.1, now + duration * 0.15);
+    env.gain.setValueAtTime(0.1, now + duration * 0.6);
+    env.gain.linearRampToValueAtTime(0, now + duration);
+
+    // Distance muffling
+    const distLp = ctx.createBiquadFilter();
+    distLp.type = "lowpass";
+    distLp.frequency.value = 600;
+    d.addNode(distLp);
+
+    osc.connect(env);
+    env.connect(distLp);
+    distLp.connect(out);
+    osc.start(now);
+    osc.stop(now + duration + 0.1);
+
+    const vibStop = setTimeout(() => {
+      try { vib.stop(); } catch { /* ok */ }
+    }, (duration + 0.2) * 1000);
+    d.addTimer(vibStop);
+
+    // Occasional follow-up yip (short bark)
+    if (Math.random() < 0.4) {
+      const yipDelay = (duration + randRange(0.3, 0.8)) * 1000;
+      d.addTimer(setTimeout(() => {
+        if (d.isAborted) return;
+        const yipNow = ctx.currentTime;
+        const yipOsc = ctx.createOscillator();
+        yipOsc.type = "sine";
+        yipOsc.frequency.setValueAtTime(baseFreq * 1.5, yipNow);
+        yipOsc.frequency.linearRampToValueAtTime(baseFreq * 2, yipNow + 0.1);
+        d.addOsc(yipOsc);
+        const yipEnv = ctx.createGain();
+        yipEnv.gain.value = 0;
+        d.addNode(yipEnv);
+        yipEnv.gain.setValueAtTime(0, yipNow);
+        yipEnv.gain.linearRampToValueAtTime(0.06, yipNow + 0.02);
+        yipEnv.gain.exponentialRampToValueAtTime(0.001, yipNow + 0.15);
+        yipOsc.connect(yipEnv);
+        yipEnv.connect(distLp);
+        yipOsc.start(yipNow);
+        yipOsc.stop(yipNow + 0.2);
+      }, yipDelay));
+    }
+
+    // Next howl after a long wait
+    d.addTimer(setTimeout(howl, randRange(25000, 60000)));
+  }
+
+  d.addTimer(setTimeout(howl, randRange(5000, 15000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 31. Owl Hoot — low breathy periodic hoots
+// ---------------------------------------------------------------------------
+export function owlHoot(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.4;
+  d.addNode(out);
+
+  function hoot() {
+    if (d.isAborted) return;
+
+    const now = ctx.currentTime;
+    // "hoo-hoo-hoo-hooooo" pattern
+    const pattern = [0.25, 0.25, 0.25, 0.7];
+    let offset = 0;
+
+    for (const dur of pattern) {
+      const t = now + offset;
+
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      const freq = randRange(260, 310);
+      osc.frequency.setValueAtTime(freq, t);
+      // Slight downward pitch at end of each note
+      osc.frequency.linearRampToValueAtTime(freq * 0.92, t + dur);
+      d.addOsc(osc);
+
+      const env = ctx.createGain();
+      env.gain.value = 0;
+      d.addNode(env);
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(0.12, t + 0.03);
+      env.gain.setValueAtTime(0.12, t + dur * 0.7);
+      env.gain.linearRampToValueAtTime(0, t + dur);
+
+      // Breathy noise layer
+      const noise = d.addSource(createNoiseSource(ctx, "brown"));
+      const noiseLp = ctx.createBiquadFilter();
+      noiseLp.type = "lowpass";
+      noiseLp.frequency.value = 400;
+      d.addNode(noiseLp);
+      const noiseEnv = ctx.createGain();
+      noiseEnv.gain.value = 0;
+      d.addNode(noiseEnv);
+      noiseEnv.gain.setValueAtTime(0, t);
+      noiseEnv.gain.linearRampToValueAtTime(0.04, t + 0.02);
+      noiseEnv.gain.linearRampToValueAtTime(0, t + dur);
+
+      // Distance filter
+      const distLp = ctx.createBiquadFilter();
+      distLp.type = "lowpass";
+      distLp.frequency.value = 500;
+      d.addNode(distLp);
+
+      osc.connect(env);
+      noise.connect(noiseLp);
+      noiseLp.connect(noiseEnv);
+      env.connect(distLp);
+      noiseEnv.connect(distLp);
+      distLp.connect(out);
+
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+
+      const stopNoise = setTimeout(() => {
+        try { noise.stop(); } catch { /* ok */ }
+        try { noise.disconnect(); } catch { /* ok */ }
+      }, (offset + dur + 0.1) * 1000);
+      d.addTimer(stopNoise);
+
+      offset += dur + randRange(0.15, 0.3);
+    }
+
+    d.addTimer(setTimeout(hoot, randRange(15000, 35000)));
+  }
+
+  d.addTimer(setTimeout(hoot, randRange(3000, 8000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
+// 32. Shimmer SFX — descending sparkle tones (shooting star)
+// ---------------------------------------------------------------------------
+export function shimmerSfx(ctx: AudioContext): SoundGeneratorResult {
+  const d = new Disposer();
+  const out = ctx.createGain();
+  out.gain.value = 0.4;
+  d.addNode(out);
+
+  // Very quiet background shimmer — high filtered noise
+  const bgNoise = d.addSource(createNoiseSource(ctx, "white"));
+  const bgHp = ctx.createBiquadFilter();
+  bgHp.type = "highpass";
+  bgHp.frequency.value = 8000;
+  d.addNode(bgHp);
+  const bgGain = ctx.createGain();
+  bgGain.gain.value = 0.01;
+  d.addNode(bgGain);
+  bgNoise.connect(bgHp);
+  bgHp.connect(bgGain);
+  bgGain.connect(out);
+
+  function sparkle() {
+    if (d.isAborted) return;
+
+    const now = ctx.currentTime;
+    const noteCount = Math.floor(randRange(5, 10));
+    const totalDuration = randRange(1.5, 3.0);
+
+    // Descending cascade of high sine pings
+    for (let i = 0; i < noteCount; i++) {
+      const t = now + (i / noteCount) * totalDuration;
+      const freq = randRange(2000, 6000) * (1 - i / noteCount * 0.4);
+      const dur = randRange(0.3, 0.8);
+
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      d.addOsc(osc);
+
+      const env = ctx.createGain();
+      env.gain.value = 0;
+      d.addNode(env);
+
+      const amp = randRange(0.03, 0.08);
+      env.gain.setValueAtTime(0, t);
+      env.gain.linearRampToValueAtTime(amp, t + 0.005);
+      env.gain.exponentialRampToValueAtTime(0.001, t + dur);
+
+      osc.connect(env);
+      env.connect(out);
+      osc.start(t);
+      osc.stop(t + dur + 0.05);
+    }
+
+    // Next shimmer after a long wait
+    d.addTimer(setTimeout(sparkle, randRange(15000, 40000)));
+  }
+
+  d.addTimer(setTimeout(sparkle, randRange(3000, 8000)));
+
+  return { node: out, cleanup: () => d.cleanup() };
+}
+
+// ---------------------------------------------------------------------------
 // Registry: all generators keyed by their sound ID
 // ---------------------------------------------------------------------------
 
@@ -1429,4 +2516,50 @@ export const SOUND_GENERATORS: Record<string, SoundGenerator> = {
   "ice-cubes": iceCubes,
   "train-horn": trainHorn,
   barista,
+
+  // ---- Scene-specific procedural sounds (replacing TODO placeholders) ----
+
+  // Train Station
+  "distant-train": distantTrain,
+  "birdsong": birdsong,
+  "crickets": crickets,
+
+  // Library (reusing existing generators with scene-specific IDs)
+  "lib-cat": catPurring,
+  "lib-clock": clock,
+  "lib-fireplace": fireplace,
+  "lib-record": vinyl,
+
+  // Cyberpunk
+  "glitch-sfx": glitchSfx,
+  "drone-hum": droneHum,
+  "cy-neon": neonBuzz,
+  "lofi-radio": lofiRadio,
+  "cat-meow": catMeow,
+  "muffled-bass": muffledBass,
+  "radio-static": radioStatic,
+
+  // Desert
+  "de-campfire": fireplace,
+  "de-crackle": fireplace,
+  "acoustic-guitar": acousticGuitar,
+  "coyote-howl": coyoteHowl,
+  "de-crickets": crickets,
+  "owl-hoot": owlHoot,
+  "shimmer-sfx": shimmerSfx,
+
+  // Shared aliases for scene-specific IDs
+  "tr-train": distantTrain,
+  "tr-birds": birdsong,
+  "tr-crickets": crickets,
+  "cy-hologram": glitchSfx,
+  "cy-drone": droneHum,
+  "cy-radio": lofiRadio,
+  "cy-cat": catMeow,
+  "cy-music": muffledBass,
+  "cy-satellite": radioStatic,
+  "de-guitar": acousticGuitar,
+  "de-coyote": coyoteHowl,
+  "de-owl": owlHoot,
+  "de-star": shimmerSfx,
 };

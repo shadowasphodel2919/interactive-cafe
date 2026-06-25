@@ -26,8 +26,10 @@ export default function InteractiveObject({
   const toggleSound = useCafeStore((s) => s.toggleSound);
   const discoverSound = useCafeStore((s) => s.discoverSound);
   const discoveredSounds = useCafeStore((s) => s.discoveredSounds);
+  const isPlayMode = useCafeStore((s) => s.isPlayMode);
   const [isHovered, setIsHovered] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [justDiscovered, setJustDiscovered] = useState(false);
 
   const soundState = sounds[soundId];
   const isActive = soundState?.isActive ?? false;
@@ -44,12 +46,66 @@ export default function InteractiveObject({
   const handleClick = useCallback(() => {
     if (isHidden && !isDiscovered) {
       discoverSound(soundId);
+      setJustDiscovered(true);
+      setTimeout(() => setJustDiscovered(false), 2000);
     }
     toggleSound(soundId);
     onToggle?.(soundId, !isActive);
   }, [soundId, isActive, isHidden, isDiscovered, toggleSound, discoverSound, onToggle]);
 
-  if (isHidden && !isDiscovered && !isHovered) {
+  // In Play Mode: undiscovered hidden items = completely invisible hit area
+  // Hover reveals a faint shimmer so users can sense something is there
+  if (isPlayMode && isHidden && !isDiscovered) {
+    return (
+      <motion.div
+        className={`interactive-object ${className}`}
+        style={{
+          position: 'absolute',
+          left: `${config?.position.x ?? 50}%`,
+          top: `${config?.position.y ?? 50}%`,
+          width: s.w,
+          height: s.h,
+          transform: 'translate(-50%, -50%)',
+          cursor: isHovered ? 'pointer' : 'default',
+          zIndex: 10,
+          ...style,
+        }}
+        onMouseEnter={() => { setIsHovered(true); setShowTooltip(true); }}
+        onMouseLeave={() => { setIsHovered(false); setShowTooltip(false); }}
+        onClick={handleClick}
+      >
+        {/* Invisible hit area — faint shimmer only on hover */}
+        <motion.div
+          className="w-full h-full rounded-full"
+          animate={{
+            background: isHovered
+              ? 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)'
+              : 'transparent',
+            boxShadow: isHovered ? '0 0 20px 4px rgba(255,255,255,0.04)' : 'none',
+          }}
+          transition={{ duration: 0.3 }}
+        />
+        {/* Minimal tooltip hinting "something's here" */}
+        <AnimatePresence>
+          {showTooltip && (
+            <motion.div
+              className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap
+                px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10
+                text-[10px] text-white/50 pointer-events-none z-50 italic"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+            >
+              ✨ something&apos;s here...
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    );
+  }
+
+  // Non-play mode: undiscovered hidden items show an invisible hit area with hover reveal
+  if (!isPlayMode && isHidden && !isDiscovered && !isHovered) {
     return (
       <motion.div
         className={`interactive-object hidden-object ${className}`}
@@ -103,6 +159,7 @@ export default function InteractiveObject({
       initial={isHidden && !isDiscovered ? { opacity: 0, scale: 0 } : { opacity: 1 }}
       animate={{ opacity: 1, scale: 1 }}
     >
+
       {/* Glow ring */}
       <motion.div
         className="absolute inset-0 rounded-full"
@@ -122,6 +179,23 @@ export default function InteractiveObject({
           ease: 'easeInOut',
         }}
       />
+
+      {/* Discovery burst — shown briefly when first discovered in Play Mode */}
+      <AnimatePresence>
+        {justDiscovered && (
+          <motion.div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            initial={{ scale: 0.5, opacity: 1 }}
+            animate={{ scale: 2.5, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            style={{
+              background: 'radial-gradient(circle, rgba(168,85,247,0.5) 0%, transparent 70%)',
+              filter: 'blur(8px)',
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Object button */}
       <motion.button

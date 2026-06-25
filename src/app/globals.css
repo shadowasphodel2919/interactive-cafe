@@ -180,3 +180,207 @@ body {
   background-repeat: repeat;
   background-size: 256px 256px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mountain Cafe – Animations & Styles
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ─── Cloud Drift ─────────────────────────────────────────────── */
+@keyframes cloudDrift {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(calc(100vw + 120%));
+  }
+}
+
+.mountain-cloud {
+  animation: cloudDrift 80s linear infinite;
+}
+
+/* ─── Snow Fall ───────────────────────────────────────────────── */
+@keyframes snowFall {
+  0% {
+    transform: translateY(-10px) translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(100vh) translateX(30px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.mountain-snowflake {
+  animation: snowFall 10s linear infinite;
+}
+
+/* ─── Star Twinkle ────────────────────────────────────────────── */
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.3); }
+}
+
+.mountain-star-twinkle {
+  animation: starTwinkle 3s ease-in-out infinite;
+}
+
+/* ─── Mountain Parallax Layers ────────────────────────────────── */
+@keyframes mountainParallaxSlow {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-15px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes mountainParallaxMid {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-25px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes mountainParallaxFast {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-40px); }
+  100% { transform: translateX(0); }
+}
+
+.mountain-layer-far {
+  animation: mountainParallaxSlow 30s ease-in-out infinite;
+}
+
+.mountain-layer-mid {
+  animation: mountainParallaxMid 25s ease-in-out infinite;
+}
+
+.mountain-layer-near {
+  animation: mountainParallaxFast 20s ease-in-out infinite;
+}
+
+/* ─── Mountain Sky ────────────────────────────────────────────── */
+@keyframes skyShift {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50% { filter: brightness(1.05) saturate(1.1); }
+}
+
+.mountain-sky {
+  animation: skyShift 60s ease-in-out infinite;
+}
+
+/* ─── Mountain Stars ──────────────────────────────────────────── */
+@keyframes starsRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(3deg); }
+}
+
+.mountain-stars {
+  animation: starsRotate 120s ease-in-out infinite alternate;
+}
+
+/* ─── Coffee Mug Steam (Enhanced for Mountain Cafe) ───────────── */
+@keyframes mountainSteam {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-35px) translateX(var(--steam-drift, -5px)) scale(1.6);
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(-70px) translateX(var(--steam-drift2, 5px)) scale(2.2);
+    opacity: 0;
+  }
+}
+
+.mountain-steam {
+  animation: mountainSteam 3.5s ease-out infinite;
+}
+
+.mountain-steam:nth-child(1) { --steam-drift: -8px; --steam-drift2: 4px; }
+.mountain-steam:nth-child(2) { --steam-drift: 5px; --steam-drift2: -6px; }
+.mountain-steam:nth-child(3) { --steam-drift: -4px; --steam-drift2: 8px; }
+.mountain-steam:nth-child(4) { --steam-drift: 7px; --steam-drift2: -3px; }
+.mountain-steam:nth-child(5) { --steam-drift: -6px; --steam-drift2: 5px; }
+
+/* ─── Mountainous Tree Sway ───────────────────────────────────── */
+@keyframes treeSway {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(1.2deg); }
+}
+
+.mountain-tree {
+  transform-origin: bottom center;
+  animation: treeSway 10s ease-in-out infinite;
+}
+
+/* ─── Windchime Swaying ────────────────────────────────────────── */
+@keyframes chimeSwaySlow {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes chimeSwaySlowAlt {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-3deg); }
+}
+
+.chime-rod-1 { animation: chimeSwaySlow 6s ease-in-out infinite; transform-origin: top center; }
+.chime-rod-2 { animation: chimeSwaySlowAlt 7s ease-in-out infinite; transform-origin: top center; }
+.chime-rod-3 { animation: chimeSwaySlow 8s ease-in-out infinite; transform-origin: top center; }
+.chime-rod-4 { animation: chimeSwaySlowAlt 9s ease-in-out infinite; transform-origin: top center; }
+.chime-catcher { animation: chimeSwaySlow 5s ease-in-out infinite; transform-origin: top center; }
+
+/* ─── Glass Raindrops Run Down ────────────────────────────────── */
+@keyframes glassRainRunDown {
+  0% {
+    transform: translateY(0) scaleY(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(300px) scaleY(1.3);
+    opacity: 0;
+  }
+}
+
+.glass-droplet {
+  animation: glassRainRunDown 7s linear infinite;
+}
+
+/* ─── Steam rising from the foreground cup ───────────────────── */
+@keyframes foregroundSteamRise {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-40px) translateX(-6px) scale(1.8);
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateY(-90px) translateX(8px) scale(2.5);
+    opacity: 0;
+  }
+}
+
+.foreground-steam {
+  animation: foregroundSteamRise 4s ease-out infinite;
+}
+
+
