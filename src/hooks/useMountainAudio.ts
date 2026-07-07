@@ -2,29 +2,38 @@
 
 import { useEffect, useRef } from 'react';
 import { useMountainStore, MOUNTAIN_SOUND_CONFIGS } from '@/store/mountain-store';
+import type { SoundGeneratorResult } from '@/lib/sound-generators';
+
+interface ProceduralChannel {
+  ctx: AudioContext;
+  result: SoundGeneratorResult;
+  gainNode: GainNode;
+}
 
 /**
- * Hook that manages HTML5 Audio elements for the Mountain Cafe mode.
- * Watches the mountain store and creates/controls audio elements accordingly.
+ * Hybrid audio hook for Mountain Cafe.
+ * Sounds with filePath '__procedural__' use Web Audio generators;
+ * all others use HTMLAudioElement.
  */
 export function useMountainAudio() {
   const audioRefs = useRef<Record<string, HTMLAudioElement>>({});
-  const initializedRef = useRef(false);
+  const proceduralRefs = useRef<Record<string, ProceduralChannel>>({});
+  const fileInitedRef = useRef(false);
 
   const sounds = useMountainStore((s) => s.sounds);
   const masterVolume = useMountainStore((s) => s.masterVolume);
   const isMuted = useMountainStore((s) => s.isMuted);
 
-  // Initialize audio elements on first user interaction
+  // Initialize file-based audio elements on first user interaction
   useEffect(() => {
-    if (initializedRef.current) return;
+    if (fileInitedRef.current) return;
 
-    const initAudio = () => {
-      if (initializedRef.current) return;
-      initializedRef.current = true;
+    const initFileAudio = () => {
+      if (fileInitedRef.current) return;
+      fileInitedRef.current = true;
 
       MOUNTAIN_SOUND_CONFIGS.forEach((config) => {
-        if (!audioRefs.current[config.id]) {
+        if (config.filePath !== '__procedural__' && !audioRefs.current[config.id]) {
           const audio = new Audio(config.filePath);
           audio.loop = config.loop;
           audio.preload = 'auto';
@@ -36,7 +45,7 @@ export function useMountainAudio() {
 
     const events = ['click', 'touchstart', 'keydown'] as const;
     const handler = () => {
-      initAudio();
+      initFileAudio();
       events.forEach((e) => document.removeEventListener(e, handler));
     };
     events.forEach((e) => document.addEventListener(e, handler, { once: true }));
@@ -46,45 +55,83 @@ export function useMountainAudio() {
     };
   }, []);
 
-  // Sync sound states
+  // Sync all sound states (both file-based and procedural)
   useEffect(() => {
-    if (!initializedRef.current) return;
+    const syncSounds = async () => {
+      const { SOUND_GENERATORS } = await import('@/lib/sound-generators');
 
-    Object.entries(sounds).forEach(([id, state]) => {
-      const audio = audioRefs.current[id];
-      if (!audio) return;
+      Object.entries(sounds).forEach(([id, state]) => {
+        const effectiveVolume = isMuted ? 0 : state.volume * masterVolume;
+        const audio = audioRefs.current[id];
+        const generator = SOUND_GENERATORS[id];
 
-      const effectiveVolume = isMuted ? 0 : state.volume * masterVolume;
+        if (audio) {
+          // ─── File-based sound ───
+          if (state.isActive) {
+            audio.volume = effectiveVolume;
+            if (audio.paused) {
+              audio.play().catch(() => {});
+            }
+          } else {
+            if (!audio.paused) {
+              audio.volume = 0;
+              setTimeout(() => {
+                audio.pause();
+                audio.currentTime = 0;
+              }, 100);
+            }
+          }
+        } else if (generator) {
+          // ─── Procedural sound ───
+          const channel = proceduralRefs.current[id];
 
-      if (state.isActive) {
-        audio.volume = effectiveVolume;
-        if (audio.paused) {
-          audio.play().catch(() => {
-            // Auto-play might be blocked; will resume on next user gesture
-          });
+          if (state.isActive) {
+            if (!channel) {
+              const ctx = new AudioContext();
+              const gainNode = ctx.createGain();
+              gainNode.gain.value = effectiveVolume;
+              gainNode.connect(ctx.destination);
+              const result = generator(ctx);
+              result.node.connect(gainNode);
+              proceduralRefs.current[id] = { ctx, result, gainNode };
+            } else {
+              channel.gainNode.gain.setTargetAtTime(
+                effectiveVolume, channel.ctx.currentTime, 0.1
+              );
+            }
+          } else if (channel) {
+            channel.result.cleanup();
+            try { channel.result.node.disconnect(); } catch { /* ok */ }
+            channel.gainNode.disconnect();
+            channel.ctx.close().catch(() => {});
+            delete proceduralRefs.current[id];
+          }
         }
-      } else {
-        if (!audio.paused) {
-          // Fade out briefly then pause
-          audio.volume = 0;
-          setTimeout(() => {
-            audio.pause();
-            audio.currentTime = 0;
-          }, 100);
-        }
-      }
-    });
+      });
+    };
+
+    syncSounds();
   }, [sounds, masterVolume, isMuted]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // File-based cleanup
       Object.values(audioRefs.current).forEach((audio) => {
         audio.pause();
         audio.src = '';
       });
       audioRefs.current = {};
-      initializedRef.current = false;
+      fileInitedRef.current = false;
+
+      // Procedural cleanup
+      Object.values(proceduralRefs.current).forEach((channel) => {
+        channel.result.cleanup();
+        try { channel.result.node.disconnect(); } catch { /* ok */ }
+        channel.gainNode.disconnect();
+        channel.ctx.close().catch(() => {});
+      });
+      proceduralRefs.current = {};
     };
   }, []);
 }

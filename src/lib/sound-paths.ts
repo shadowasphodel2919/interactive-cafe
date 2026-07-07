@@ -47,20 +47,17 @@ export const CITY_CAFE_NOTE =
 // 🏔️  Mountain Café
 // ---------------------------------------------------------------------------
 export const MOUNTAIN_PATHS = {
-  /** ☕ Coffee Pouring */          'mt-coffee-pour':  SHARED.COFFEE_POUR,
+  /** ☕ Espresso Machine (proc) */   'mt-espresso':     '__procedural__' as const,
   /** ⚙️  Coffee Grinder */          'mt-grinder':      SHARED.COFFEE_GRIND,
-  /** 🍳 Kitchen Sizzle */          'mt-cooking':      SHARED.COOKING,
-  /** ♨️  Steam Bubbler */           'mt-steam':        SHARED.STEAM,
-  /** 🍹 Cocktail Shake */          'mt-shake':        SHARED.SHAKE,
-  /** 🔔 Oven Timer */              'mt-oven':         SHARED.OVEN_DING,
-  /** 🧊 Ice Clinking */            'mt-ice':          SHARED.ICE_IN_GLASS,
-  /** 🌧️ Mountain Rain */           'mt-rain':         SHARED.RAIN,
-  /** 🌬️ Mountain Wind */           'mt-wind':         SHARED.WIND,
-  /** 🎐 Wind Chimes */             'mt-chimes':       SHARED.WIND_CHIMES,
-  /** 💬 Quiet Chatter */           'mt-conversation': SHARED.CONVERSATION,
-  /** ⌨️  Keyboard Typing */         'mt-keyboard':     SHARED.KEYBOARD,
-  /** 💻 Mechanical Keys */         'mt-typing':       SHARED.KEYBOARD_MECH,
-  /** 📖 Turning Pages */           'mt-pages':        SHARED.PAGES_TURNING,
+  /** 👨‍🍳 Barista (proc) */           'mt-barista':      '__procedural__' as const,
+  /** 🧊 Ice Cubes */                'mt-ice':          SHARED.ICE_IN_GLASS,
+  /** 📖 Turning Pages */            'mt-pages':        SHARED.PAGES_TURNING,
+  /** 💬 Quiet Talking */            'mt-conversation': SHARED.CONVERSATION,
+  /** 🎵 Vinyl Record (proc) */      'mt-vinyl':        '__procedural__' as const,
+  /** 🌀 Ceiling Fan (proc) */       'mt-fan':          '__procedural__' as const,
+  /** 🎐 Wind Chimes */              'mt-chimes':       SHARED.WIND_CHIMES,
+  /** 🌬️ Wind Blowing */             'mt-wind':         SHARED.WIND,
+  /** 🔔 Distant Bell */             'mt-bell':         SHARED.OVEN_DING,
 } as const;
 
 // ---------------------------------------------------------------------------

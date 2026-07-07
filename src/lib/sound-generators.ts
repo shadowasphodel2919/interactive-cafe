@@ -2562,4 +2562,10 @@ export const SOUND_GENERATORS: Record<string, SoundGenerator> = {
   "de-coyote": coyoteHowl,
   "de-owl": owlHoot,
   "de-star": shimmerSfx,
+
+  // Mountain Café (procedural aliases)
+  "mt-espresso": espresso,
+  "mt-barista": barista,
+  "mt-vinyl": vinyl,
+  "mt-fan": ceilingFan,
 };

@@ -23,13 +23,13 @@ export interface MountainSoundState {
 export const MOUNTAIN_SOUND_CONFIGS: MountainSoundConfig[] = [
   // ☕ Coffee & Kitchen
   {
-    id: 'mt-coffee-pour',
-    name: 'Coffee Pouring',
+    id: 'mt-espresso',
+    name: 'Espresso Machine',
     icon: '☕',
     category: 'coffee',
-    description: 'Fresh coffee pouring into a cup',
-    defaultVolume: 0.5,
-    filePath: '/sounds/coffee-pouring-into-a-cup.mp3',
+    description: 'Rich espresso extraction hiss',
+    defaultVolume: 0.6,
+    filePath: '__procedural__',
     loop: true,
   },
   {
@@ -43,77 +43,69 @@ export const MOUNTAIN_SOUND_CONFIGS: MountainSoundConfig[] = [
     loop: true,
   },
   {
-    id: 'mt-cooking',
-    name: 'Kitchen Sizzle',
-    icon: '🍳',
+    id: 'mt-barista',
+    name: 'Barista',
+    icon: '👨‍🍳',
     category: 'coffee',
-    description: 'Frying and sizzling from the kitchen',
-    defaultVolume: 0.3,
-    filePath: '/sounds/cooking-frying-sizzling-food-free-kitchen.mp3',
-    loop: true,
-  },
-  {
-    id: 'mt-steam',
-    name: 'Steam Bubbler',
-    icon: '♨️',
-    category: 'coffee',
-    description: 'Hot steam from the espresso machine',
-    defaultVolume: 0.4,
-    filePath: '/sounds/steam-bubbler.mp3',
-    loop: true,
-  },
-  {
-    id: 'mt-shake',
-    name: 'Cocktail Shake',
-    icon: '🍹',
-    category: 'coffee',
-    description: 'Shaking a fresh drink',
-    defaultVolume: 0.35,
-    filePath: '/sounds/shake.mp3',
-    loop: true,
-  },
-  {
-    id: 'mt-oven',
-    name: 'Oven Timer',
-    icon: '🔔',
-    category: 'coffee',
-    description: 'Oven timer ding from the bakery',
-    defaultVolume: 0.3,
-    filePath: '/sounds/oven-timer-ding.mp3',
+    description: 'Cups clinking, steaming milk',
+    defaultVolume: 0.5,
+    filePath: '__procedural__',
     loop: true,
   },
   {
     id: 'mt-ice',
-    name: 'Ice Clinking',
+    name: 'Ice Cubes',
     icon: '🧊',
     category: 'coffee',
-    description: 'Ice cubes in a cold glass',
+    description: 'Ice cubes clinking in a cold glass',
     defaultVolume: 0.35,
     filePath: '/sounds/ice-in-a-glass.mp3',
     loop: true,
   },
 
-  // 🌿 Nature & Wind
+  // 💬 People & Activity
   {
-    id: 'mt-rain',
-    name: 'Mountain Rain',
-    icon: '🌧️',
-    category: 'nature',
-    description: 'Gentle rain against the window',
-    defaultVolume: 0.6,
-    filePath: '/sounds/relaxing-rain.mp3',
+    id: 'mt-pages',
+    name: 'Turning Pages',
+    icon: '📖',
+    category: 'people',
+    description: 'Someone reading by the window',
+    defaultVolume: 0.3,
+    filePath: '/sounds/turning-pages.mp3',
     loop: true,
   },
   {
-    id: 'mt-wind',
-    name: 'Mountain Wind',
-    icon: '🌬️',
-    category: 'nature',
-    description: 'Cool breeze through the peaks',
-    defaultVolume: 0.5,
-    filePath: '/sounds/wind-blowing.mp3',
+    id: 'mt-conversation',
+    name: 'Quiet Talking',
+    icon: '💬',
+    category: 'people',
+    description: 'Soft conversations around you',
+    defaultVolume: 0.4,
+    filePath: '/sounds/conversation.mp3',
     loop: true,
   },
+  {
+    id: 'mt-vinyl',
+    name: 'Vinyl Record',
+    icon: '🎵',
+    category: 'people',
+    description: 'Warm vinyl crackle and music',
+    defaultVolume: 0.3,
+    filePath: '__procedural__',
+    loop: true,
+  },
+  {
+    id: 'mt-fan',
+    name: 'Ceiling Fan',
+    icon: '🌀',
+    category: 'people',
+    description: 'Slow whooshing overhead',
+    defaultVolume: 0.2,
+    filePath: '__procedural__',
+    loop: true,
+  },
+
+  // 🌿 Nature & Atmosphere
   {
     id: 'mt-chimes',
     name: 'Wind Chimes',
@@ -124,46 +116,24 @@ export const MOUNTAIN_SOUND_CONFIGS: MountainSoundConfig[] = [
     filePath: '/sounds/wind-chimes-bells.mp3',
     loop: true,
   },
-
-  // 💬 People & Activity
   {
-    id: 'mt-conversation',
-    name: 'Quiet Chatter',
-    icon: '💬',
-    category: 'people',
-    description: 'Soft conversations around you',
-    defaultVolume: 0.4,
-    filePath: '/sounds/conversation.mp3',
+    id: 'mt-wind',
+    name: 'Wind Blowing',
+    icon: '🌬️',
+    category: 'nature',
+    description: 'Cool breeze through the peaks',
+    defaultVolume: 0.5,
+    filePath: '/sounds/wind-blowing.mp3',
     loop: true,
   },
   {
-    id: 'mt-keyboard',
-    name: 'Keyboard Typing',
-    icon: '⌨️',
-    category: 'people',
-    description: 'Someone working on their laptop',
+    id: 'mt-bell',
+    name: 'Distant Bell',
+    icon: '🔔',
+    category: 'nature',
+    description: 'A distant bell echoing through the valley',
     defaultVolume: 0.3,
-    filePath: '/sounds/keyboard-typing.mp3',
-    loop: true,
-  },
-  {
-    id: 'mt-typing',
-    name: 'Mechanical Keys',
-    icon: '💻',
-    category: 'people',
-    description: 'Rhythmic mechanical keyboard',
-    defaultVolume: 0.25,
-    filePath: '/sounds/computer-keyboard-typing.mp3',
-    loop: true,
-  },
-  {
-    id: 'mt-pages',
-    name: 'Turning Pages',
-    icon: '📖',
-    category: 'people',
-    description: 'Someone reading by the window',
-    defaultVolume: 0.3,
-    filePath: '/sounds/turning-pages.mp3',
+    filePath: '/sounds/oven-timer-ding.mp3',
     loop: true,
   },
 ];
@@ -245,11 +215,36 @@ export const useMountainStore = create<MountainStore>()(
     }),
     {
       name: 'mountain-cafe-store',
+      version: 2,
+      migrate: (persistedState: any) => persistedState,
       partialize: (state) => ({
         sounds: state.sounds,
         masterVolume: state.masterVolume,
         isWindowOpen: state.isWindowOpen,
       }),
+      merge: (persisted: any, current: MountainStore): MountainStore => {
+        if (!persisted) return current;
+
+        // Build a sounds object that uses current config as the baseline,
+        // then overlays any persisted values for IDs that still exist.
+        const validIds = new Set(MOUNTAIN_SOUND_CONFIGS.map((c) => c.id));
+        const mergedSounds: Record<string, MountainSoundState> = { ...initialMountainSounds };
+
+        if (persisted.sounds) {
+          for (const id of Object.keys(persisted.sounds)) {
+            if (validIds.has(id)) {
+              mergedSounds[id] = persisted.sounds[id];
+            }
+          }
+        }
+
+        return {
+          ...current,
+          sounds: mergedSounds,
+          masterVolume: persisted.masterVolume ?? current.masterVolume,
+          isWindowOpen: persisted.isWindowOpen ?? current.isWindowOpen,
+        };
+      },
     }
   )
 );

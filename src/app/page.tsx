@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
+
 import CafeScene from '@/components/scene/CafeScene';
 import MountainScene from '@/components/scene/MountainScene';
 import TrainScene from '@/components/scene/TrainScene';
@@ -9,6 +11,7 @@ import DesertScene from '@/components/scene/DesertScene';
 
 import UnifiedControlPanel from '@/components/ui/UnifiedControlPanel';
 import ModeSelector from '@/components/ui/ModeSelector';
+import PomodoroClock from '@/components/ui/PomodoroClock';
 
 import { useAudioManager } from '@/hooks/useAudioManager';
 import { useMountainAudio } from '@/hooks/useMountainAudio';
@@ -18,9 +21,29 @@ import { useCyberpunkAudio } from '@/hooks/useCyberpunkAudio';
 import { useDesertAudio } from '@/hooks/useDesertAudio';
 
 import { useCafeStore } from '@/store/cafe-store';
+import { useMountainStore } from '@/store/mountain-store';
+import { useTrainStore } from '@/store/train-store';
+import { useLibraryStore } from '@/store/library-store';
+import { useCyberpunkStore } from '@/store/cyberpunk-store';
+import { useDesertStore } from '@/store/desert-store';
 
 export default function Home() {
   const currentMode = useCafeStore((s) => s.currentMode);
+
+  // Reset all active sounds when switching modes
+  const prevModeRef = useRef(currentMode);
+
+  useEffect(() => {
+    if (prevModeRef.current !== currentMode) {
+      useCafeStore.getState().clearAll();
+      useMountainStore.getState().clearAll();
+      useTrainStore.getState().clearAll();
+      useLibraryStore.getState().clearAll();
+      useCyberpunkStore.getState().clearAll();
+      useDesertStore.getState().clearAll();
+      prevModeRef.current = currentMode;
+    }
+  }, [currentMode]);
 
   // Initialize all audio managers — they only play when their respective sounds are active
   useAudioManager();
@@ -54,6 +77,7 @@ export default function Home() {
       {renderSceneContent()}
       <UnifiedControlPanel />
       <ModeSelector />
+      <PomodoroClock />
     </main>
   );
 }

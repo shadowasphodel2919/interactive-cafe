@@ -86,10 +86,10 @@ export default function ModeSelector() {
     <div ref={dropdownRef} className="fixed top-6 left-6 z-[50]">
       {/* Current Mode Button */}
       <motion.button
-        className="flex items-center gap-2 px-3 py-2 rounded-xl
+        className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl
           bg-black/50 backdrop-blur-xl border border-white/10
           hover:bg-black/60 hover:border-white/15
-          transition-all duration-200 shadow-lg shadow-black/20"
+          transition-all duration-200 shadow-lg shadow-black/20 cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
@@ -97,7 +97,7 @@ export default function ModeSelector() {
         aria-expanded={isOpen}
       >
         <span className="text-base">{activeMode.icon}</span>
-        <span className="text-xs font-outfit font-medium text-white/70">{activeMode.label}</span>
+        <span className="text-xs font-zurich font-semibold tracking-wider text-white/80">{activeMode.label}</span>
         <motion.span
           className="text-white/30 text-[10px]"
           animate={{ rotate: isOpen ? 180 : 0 }}
@@ -111,7 +111,7 @@ export default function ModeSelector() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="absolute top-full mt-2 left-0 w-56 rounded-xl overflow-hidden
+            className="absolute top-full mt-2 left-0 w-60 rounded-xl overflow-hidden
               border border-white/10 shadow-2xl shadow-black/40"
             style={{
               background: 'linear-gradient(135deg, rgba(20,20,30,0.95) 0%, rgba(15,15,25,0.98) 100%)',
@@ -122,14 +122,14 @@ export default function ModeSelector() {
             exit={{ opacity: 0, y: -8, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
-            <div className="p-2 space-y-1">
+            <div className="p-2 space-y-1.5">
               {MODES.map((mode) => {
                 const isActive = currentMode === mode.key;
                 return (
                   <motion.button
                     key={mode.key}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left
-                      transition-all duration-200
+                    className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-lg text-left
+                      transition-all duration-200 cursor-pointer
                       ${isActive
                         ? 'border'
                         : 'hover:bg-white/5 border border-transparent'
@@ -146,9 +146,9 @@ export default function ModeSelector() {
                     whileTap={{ scale: 0.98 }}
                   >
                     <span className="text-xl">{mode.icon}</span>
-                    <div>
-                      <div className="text-xs font-outfit font-semibold text-white/80">{mode.label}</div>
-                      <div className="text-[10px] text-white/35">{mode.description}</div>
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-zurich font-semibold tracking-wider text-white/80">{mode.label}</div>
+                      <div className="text-[10px] text-white/40 font-zurich-cond tracking-wide">{mode.description}</div>
                     </div>
                     {isActive && (
                       <motion.div

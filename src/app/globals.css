@@ -1,47 +1,65 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Oswald:wght@300;400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
+@source "../";
 
-/* ─── Custom Theme Variables ──────────────────────────────────── */
-:root {
+/* ─── Custom Theme Extensions (Tailwind v4 CSS-first config) ───── */
+@theme inline {
+  /* Colors — mirrors tailwind.config.ts for v4 compatibility */
   --color-bg: #0a0a0f;
   --color-bg-panel: rgba(20, 20, 30, 0.85);
+  --color-warm: #ff9f43;
   --color-amber: #f59e0b;
   --color-amber-glow: rgba(245, 158, 11, 0.3);
-  --color-warm: #ff9f43;
-  --font-outfit: 'Outfit', sans-serif;
-  --font-inter: 'Inter', sans-serif;
+
+  /* Font families — must use --font-family-* for utility class generation */
+  --font-family-outfit: 'Outfit', sans-serif;
+  --font-family-inter: 'Inter', sans-serif;
+  --font-family-zurich: 'Oswald', sans-serif;
+  --font-family-zurich-cond: 'Barlow Condensed', sans-serif;
 }
 
 /* ─── Base Styles ─────────────────────────────────────────────── */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@layer base {
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    overflow: hidden;
+    touch-action: manipulation;
+  }
+
+  body {
+    font-family: var(--font-family-inter);
+    background: var(--color-bg);
+    color: #fff;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent pull-to-refresh on mobile */
+    overscroll-behavior: none;
+  }
 }
 
-html {
-  overflow: hidden;
-  touch-action: manipulation;
-}
-
-body {
-  font-family: var(--font-inter);
-  background: var(--color-bg);
-  color: #fff;
-  overflow: hidden;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* Prevent pull-to-refresh on mobile */
-  overscroll-behavior: none;
-}
-
-/* ─── Font Utilities ──────────────────────────────────────────── */
+/* ─── Font Utilities (fallback classes for explicit use) ─────── */
 .font-outfit {
-  font-family: var(--font-outfit);
+  font-family: var(--font-family-outfit);
 }
 
 .font-inter {
-  font-family: var(--font-inter);
+  font-family: var(--font-family-inter);
+}
+
+.font-zurich {
+  font-family: var(--font-family-zurich);
+  letter-spacing: 0.03em;
+}
+
+.font-zurich-cond {
+  font-family: var(--font-family-zurich-cond);
+  letter-spacing: 0.02em;
 }
 
 /* ─── Animation Keyframes ─────────────────────────────────────── */
@@ -50,12 +68,15 @@ body {
     transform: translateY(-30px);
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   90% {
     opacity: 1;
   }
+
   100% {
     transform: translateY(100vh);
     opacity: 0;
@@ -67,10 +88,12 @@ body {
     transform: translate(0, 0) scale(1);
     opacity: 0.3;
   }
+
   50% {
     transform: translate(var(--steam-x, -5px), -30px) scale(1.5);
     opacity: 0.15;
   }
+
   100% {
     transform: translate(var(--steam-x2, 5px), -60px) scale(2);
     opacity: 0;
@@ -78,38 +101,98 @@ body {
 }
 
 @keyframes flicker {
-  0%, 100% { opacity: 0.8; }
-  10% { opacity: 0.6; }
-  20% { opacity: 0.9; }
-  30% { opacity: 0.7; }
-  40% { opacity: 0.85; }
-  50% { opacity: 0.65; }
-  60% { opacity: 0.9; }
-  70% { opacity: 0.75; }
-  80% { opacity: 0.85; }
-  90% { opacity: 0.7; }
+
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+
+  10% {
+    opacity: 0.6;
+  }
+
+  20% {
+    opacity: 0.9;
+  }
+
+  30% {
+    opacity: 0.7;
+  }
+
+  40% {
+    opacity: 0.85;
+  }
+
+  50% {
+    opacity: 0.65;
+  }
+
+  60% {
+    opacity: 0.9;
+  }
+
+  70% {
+    opacity: 0.75;
+  }
+
+  80% {
+    opacity: 0.85;
+  }
+
+  90% {
+    opacity: 0.7;
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(255, 183, 77, 0.2);
   }
+
   50% {
     box-shadow: 0 0 25px rgba(255, 183, 77, 0.4);
   }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 /* ─── Steam Particles ─────────────────────────────────────────── */
-.steam-particle:nth-child(1) { --steam-x: -8px; --steam-x2: 3px; }
-.steam-particle:nth-child(2) { --steam-x: 5px; --steam-x2: -7px; }
-.steam-particle:nth-child(3) { --steam-x: -3px; --steam-x2: 8px; }
-.steam-particle:nth-child(4) { --steam-x: 7px; --steam-x2: -4px; }
-.steam-particle:nth-child(5) { --steam-x: -6px; --steam-x2: 6px; }
+.steam-particle:nth-child(1) {
+  --steam-x: -8px;
+  --steam-x2: 3px;
+}
+
+.steam-particle:nth-child(2) {
+  --steam-x: 5px;
+  --steam-x2: -7px;
+}
+
+.steam-particle:nth-child(3) {
+  --steam-x: -3px;
+  --steam-x2: 8px;
+}
+
+.steam-particle:nth-child(4) {
+  --steam-x: 7px;
+  --steam-x2: -4px;
+}
+
+.steam-particle:nth-child(5) {
+  --steam-x: -6px;
+  --steam-x2: 6px;
+}
 
 /* ─── Interactive Objects ─────────────────────────────────────── */
 .interactive-object {
@@ -160,8 +243,15 @@ body {
 
 /* ─── Loading Screen ──────────────────────────────────────────── */
 @keyframes cafeLoad {
-  0% { opacity: 0; transform: scale(0.95); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .cafe-enter {
@@ -190,6 +280,7 @@ body {
   0% {
     transform: translateX(-120%);
   }
+
   100% {
     transform: translateX(calc(100vw + 120%));
   }
@@ -205,12 +296,15 @@ body {
     transform: translateY(-10px) translateX(0) rotate(0deg);
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   90% {
     opacity: 0.6;
   }
+
   100% {
     transform: translateY(100vh) translateX(30px) rotate(360deg);
     opacity: 0;
@@ -223,8 +317,17 @@ body {
 
 /* ─── Star Twinkle ────────────────────────────────────────────── */
 @keyframes starTwinkle {
-  0%, 100% { opacity: 0.3; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.3); }
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.3);
+  }
 }
 
 .mountain-star-twinkle {
@@ -233,21 +336,45 @@ body {
 
 /* ─── Mountain Parallax Layers ────────────────────────────────── */
 @keyframes mountainParallaxSlow {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(-15px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-15px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }
 
 @keyframes mountainParallaxMid {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(-25px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-25px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }
 
 @keyframes mountainParallaxFast {
-  0% { transform: translateX(0); }
-  50% { transform: translateX(-40px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(-40px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
 }
 
 .mountain-layer-far {
@@ -264,8 +391,15 @@ body {
 
 /* ─── Mountain Sky ────────────────────────────────────────────── */
 @keyframes skyShift {
-  0%, 100% { filter: brightness(1) saturate(1); }
-  50% { filter: brightness(1.05) saturate(1.1); }
+
+  0%,
+  100% {
+    filter: brightness(1) saturate(1);
+  }
+
+  50% {
+    filter: brightness(1.05) saturate(1.1);
+  }
 }
 
 .mountain-sky {
@@ -274,8 +408,13 @@ body {
 
 /* ─── Mountain Stars ──────────────────────────────────────────── */
 @keyframes starsRotate {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(3deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(3deg);
+  }
 }
 
 .mountain-stars {
@@ -288,13 +427,16 @@ body {
     transform: translateY(0) translateX(0) scale(1);
     opacity: 0;
   }
+
   15% {
     opacity: 0.3;
   }
+
   50% {
     transform: translateY(-35px) translateX(var(--steam-drift, -5px)) scale(1.6);
     opacity: 0.15;
   }
+
   100% {
     transform: translateY(-70px) translateX(var(--steam-drift2, 5px)) scale(2.2);
     opacity: 0;
@@ -305,16 +447,42 @@ body {
   animation: mountainSteam 3.5s ease-out infinite;
 }
 
-.mountain-steam:nth-child(1) { --steam-drift: -8px; --steam-drift2: 4px; }
-.mountain-steam:nth-child(2) { --steam-drift: 5px; --steam-drift2: -6px; }
-.mountain-steam:nth-child(3) { --steam-drift: -4px; --steam-drift2: 8px; }
-.mountain-steam:nth-child(4) { --steam-drift: 7px; --steam-drift2: -3px; }
-.mountain-steam:nth-child(5) { --steam-drift: -6px; --steam-drift2: 5px; }
+.mountain-steam:nth-child(1) {
+  --steam-drift: -8px;
+  --steam-drift2: 4px;
+}
+
+.mountain-steam:nth-child(2) {
+  --steam-drift: 5px;
+  --steam-drift2: -6px;
+}
+
+.mountain-steam:nth-child(3) {
+  --steam-drift: -4px;
+  --steam-drift2: 8px;
+}
+
+.mountain-steam:nth-child(4) {
+  --steam-drift: 7px;
+  --steam-drift2: -3px;
+}
+
+.mountain-steam:nth-child(5) {
+  --steam-drift: -6px;
+  --steam-drift2: 5px;
+}
 
 /* ─── Mountainous Tree Sway ───────────────────────────────────── */
 @keyframes treeSway {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(1.2deg); }
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(1.2deg);
+  }
 }
 
 .mountain-tree {
@@ -324,19 +492,53 @@ body {
 
 /* ─── Windchime Swaying ────────────────────────────────────────── */
 @keyframes chimeSwaySlow {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(3deg); }
-}
-@keyframes chimeSwaySlowAlt {
-  0%, 100% { transform: rotate(0deg); }
-  50% { transform: rotate(-3deg); }
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(3deg);
+  }
 }
 
-.chime-rod-1 { animation: chimeSwaySlow 6s ease-in-out infinite; transform-origin: top center; }
-.chime-rod-2 { animation: chimeSwaySlowAlt 7s ease-in-out infinite; transform-origin: top center; }
-.chime-rod-3 { animation: chimeSwaySlow 8s ease-in-out infinite; transform-origin: top center; }
-.chime-rod-4 { animation: chimeSwaySlowAlt 9s ease-in-out infinite; transform-origin: top center; }
-.chime-catcher { animation: chimeSwaySlow 5s ease-in-out infinite; transform-origin: top center; }
+@keyframes chimeSwaySlowAlt {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(-3deg);
+  }
+}
+
+.chime-rod-1 {
+  animation: chimeSwaySlow 6s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.chime-rod-2 {
+  animation: chimeSwaySlowAlt 7s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.chime-rod-3 {
+  animation: chimeSwaySlow 8s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.chime-rod-4 {
+  animation: chimeSwaySlowAlt 9s ease-in-out infinite;
+  transform-origin: top center;
+}
+
+.chime-catcher {
+  animation: chimeSwaySlow 5s ease-in-out infinite;
+  transform-origin: top center;
+}
 
 /* ─── Glass Raindrops Run Down ────────────────────────────────── */
 @keyframes glassRainRunDown {
@@ -344,12 +546,15 @@ body {
     transform: translateY(0) scaleY(1);
     opacity: 0;
   }
+
   10% {
     opacity: 0.8;
   }
+
   80% {
     opacity: 0.8;
   }
+
   100% {
     transform: translateY(300px) scaleY(1.3);
     opacity: 0;
@@ -366,13 +571,16 @@ body {
     transform: translateY(0) translateX(0) scale(1);
     opacity: 0;
   }
+
   15% {
     opacity: 0.3;
   }
+
   50% {
     transform: translateY(-40px) translateX(-6px) scale(1.8);
     opacity: 0.2;
   }
+
   100% {
     transform: translateY(-90px) translateX(8px) scale(2.5);
     opacity: 0;
@@ -382,5 +590,3 @@ body {
 .foreground-steam {
   animation: foregroundSteamRise 4s ease-out infinite;
 }
-
-
