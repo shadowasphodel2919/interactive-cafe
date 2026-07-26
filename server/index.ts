@@ -12,6 +12,7 @@ import type {
 } from './types';
 
 const PORT = process.env.PORT || 3001;
+const HOST = '0.0.0.0';
 
 // Strict origin whitelist — default to your Vercel app and local dev URLs
 const ALLOWED_ORIGINS = process.env.CORS_ORIGIN
@@ -21,6 +22,14 @@ const ALLOWED_ORIGINS = process.env.CORS_ORIGIN
       'http://localhost:3000',
       'http://127.0.0.1:3000',
     ];
+
+function isOriginAllowed(origin?: string): boolean {
+  if (!origin) return true;
+  if (ALLOWED_ORIGINS.includes('*')) return true;
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (origin.endsWith('.vercel.app')) return true;
+  return false;
+}
 
 // ─── In-memory store ──────────────────────────────────────────────────────
 const rooms = new Map<string, Room>();
@@ -70,12 +79,12 @@ function removeUserFromCurrentRoom(io: Server, socketId: string) {
 // ─── Server Boot ─────────────────────────────────────────────────────────
 
 const httpServer = createServer((req, res) => {
-  // Validate request origin against strict whitelist
+  // Validate request origin against strict whitelist or *.vercel.app
   const reqOrigin = req.headers.origin;
-  const isAllowed = reqOrigin && (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(reqOrigin));
+  const isAllowed = isOriginAllowed(reqOrigin);
 
   if (isAllowed) {
-    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin || '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -98,8 +107,7 @@ const httpServer = createServer((req, res) => {
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
     origin: (requestOrigin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, health checks) or matched whitelist
-      if (!requestOrigin || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(requestOrigin)) {
+      if (isOriginAllowed(requestOrigin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -260,6 +268,6 @@ io.on('connection', (socket) => {
   });
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`\n🚀 Study Rooms Socket.io server running on http://localhost:${PORT}\n`);
+httpServer.listen(Number(PORT), HOST, () => {
+  console.log(`\n🚀 Study Rooms Socket.io server running on http://${HOST}:${PORT}\n`);
 });
