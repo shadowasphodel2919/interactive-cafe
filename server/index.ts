@@ -11,7 +11,10 @@ import type {
   SceneMode,
 } from './types';
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+const CORS_ORIGIN = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+  : '*';
 
 // ─── In-memory store ──────────────────────────────────────────────────────
 const rooms = new Map<string, Room>();
@@ -64,7 +67,7 @@ const httpServer = createServer();
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: CORS_ORIGIN,
     methods: ['GET', 'POST'],
   },
 });
