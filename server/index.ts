@@ -12,9 +12,15 @@ import type {
 } from './types';
 
 const PORT = process.env.PORT || 3001;
-const CORS_ORIGIN = process.env.CORS_ORIGIN
+
+// Strict origin whitelist — default to your Vercel app and local dev URLs
+const ALLOWED_ORIGINS = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
-  : '*';
+  : [
+      'https://interactive-cafe.vercel.app',
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+    ];
 
 // ─── In-memory store ──────────────────────────────────────────────────────
 const rooms = new Map<string, Room>();
@@ -63,12 +69,44 @@ function removeUserFromCurrentRoom(io: Server, socketId: string) {
 
 // ─── Server Boot ─────────────────────────────────────────────────────────
 
-const httpServer = createServer();
+const httpServer = createServer((req, res) => {
+  // Validate request origin against strict whitelist
+  const reqOrigin = req.headers.origin;
+  const isAllowed = reqOrigin && (ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(reqOrigin));
+
+  if (isAllowed) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(isAllowed ? 204 : 403);
+    res.end();
+    return;
+  }
+
+  // Health check endpoint for Railway/cloud platforms
+  if (req.url === '/' || req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', server: 'Study Rooms Socket Server' }));
+    return;
+  }
+});
 
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
-    origin: CORS_ORIGIN,
-    methods: ['GET', 'POST'],
+    origin: (requestOrigin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, health checks) or matched whitelist
+      if (!requestOrigin || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(requestOrigin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    credentials: true,
   },
 });
 
