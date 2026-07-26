@@ -79,15 +79,19 @@ function removeUserFromCurrentRoom(io: Server, socketId: string) {
 // ─── Server Boot ─────────────────────────────────────────────────────────
 
 const httpServer = createServer((req, res) => {
-  // Always set CORS headers on raw HTTP requests (polling, preflight, health checks)
-  const reqOrigin = req.headers.origin || '*';
-  res.setHeader('Access-Control-Allow-Origin', reqOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  // Validate request origin against strict whitelist or *.vercel.app
+  const reqOrigin = req.headers.origin;
+  const isAllowed = isOriginAllowed(reqOrigin);
+
+  if (isAllowed) {
+    res.setHeader('Access-Control-Allow-Origin', reqOrigin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
 
   if (req.method === 'OPTIONS') {
-    res.writeHead(204);
+    res.writeHead(isAllowed ? 204 : 403);
     res.end();
     return;
   }
@@ -103,13 +107,15 @@ const httpServer = createServer((req, res) => {
 const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
   cors: {
     origin: (requestOrigin, callback) => {
-      // Echo requestOrigin or allow all
-      callback(null, requestOrigin || true);
+      if (isOriginAllowed(requestOrigin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     },
     methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true,
   },
-  transports: ['polling', 'websocket'],
 });
 
 io.on('connection', (socket) => {
